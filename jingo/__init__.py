@@ -57,7 +57,8 @@ def get_env():
 
     e = Environment(**opts)
     # TODO: use real translations
-    e.install_null_translations()
+    if hasattr(e, 'install_null_translations'):
+        e.install_null_translations()
     return e
 
 
