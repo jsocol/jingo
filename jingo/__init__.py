@@ -73,6 +73,17 @@ class JingoTemplateResponse(TemplateResponse):
         content = render_to_string(self._request, template, context)
         return content
 
+    def _get_content(self):
+        if not self._is_rendered:
+            self.render()
+        return super(JingoTemplateResponse, self)._get_content()
+
+    def _set_content(self, value):
+        super(JingoTemplateResponse, self)._set_content(value)
+        self._is_rendered = True
+
+    content = property(_get_content, _set_content)
+
 
 def render(request, template, context=None, **kwargs):
     """
