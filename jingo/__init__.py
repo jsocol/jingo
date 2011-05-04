@@ -6,6 +6,7 @@ import logging
 from django import http
 from django.conf import settings
 from django.template.context import get_standard_processors
+from django.template.response import TemplateResponse
 from django.utils.importlib import import_module
 from django.utils.translation import trans_real
 
@@ -59,6 +60,20 @@ def get_env():
     return e
 
 
+class JingoTemplateResponse(TemplateResponse):
+    def resolve_template(self, template):
+        if not isinstance(template, jinja2.environment.Template):
+            return env.get_template(template)
+        return template
+
+    @property
+    def rendered_content(self):
+        template = self.resolve_template(self.template_name)
+        context = self.resolve_context(self.context_data).__dict__
+        content = render_to_string(self._request, template, context)
+        return content
+
+
 def render(request, template, context=None, **kwargs):
     """
     Shortcut like Django's ``render_to_response``, but better.
@@ -73,8 +88,7 @@ def render(request, template, context=None, **kwargs):
         return jingo.render(request, 'template.html',
                             {'some_var': 42}, status=209)
     """
-    rendered = render_to_string(request, template, context)
-    return http.HttpResponse(rendered, **kwargs)
+    return JingoTemplateResponse(request, template, context, **kwargs)
 
 
 def render_to_string(request, template, context=None):
