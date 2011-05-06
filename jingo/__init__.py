@@ -62,6 +62,11 @@ def get_env():
 
 
 class JingoTemplateResponse(TemplateResponse):
+    """
+    A TemplateResponse that uses jingo/Jinja2 to render itself and behaves
+    more like the responses we've come to know and love.
+    """
+
     def resolve_template(self, template):
         if not isinstance(template, jinja2.environment.Template):
             return env.get_template(template)
