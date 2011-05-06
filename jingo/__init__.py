@@ -5,8 +5,9 @@ import logging
 
 from django import http
 from django.conf import settings
-from django.template.context import get_standard_processors
+from django.template.context import RequestContext, get_standard_processors
 from django.template.response import TemplateResponse
+from django.utils.encoding import smart_str
 from django.utils.importlib import import_module
 from django.utils.translation import trans_real
 
@@ -69,9 +70,12 @@ class JingoTemplateResponse(TemplateResponse):
     @property
     def rendered_content(self):
         template = self.resolve_template(self.template_name)
-        context = self.resolve_context(self.context_data).__dict__
-        content = render_to_string(self._request, template, context)
-        return content
+        context_instance = self.resolve_context(self.context_data)
+        request = context_instance['request']
+        context = {}
+        for d in context_instance.dicts:
+            context.update(d)
+        return render_to_string(request, template, context)
 
     def _get_content(self):
         if not self._is_rendered:
@@ -83,6 +87,20 @@ class JingoTemplateResponse(TemplateResponse):
         self._is_rendered = True
 
     content = property(_get_content, _set_content)
+
+    def __str__(self):
+        return smart_str(self.content)
+
+    def __unicode__(self):
+        return self.content
+
+    def __len__(self):
+        return len(self.content)
+
+    def __iter__(self):
+        if not self._is_rendered:
+            self.render()
+        return super(JingoTemplateResponse, self).__iter__()
 
 
 def render(request, template, context=None, **kwargs):
