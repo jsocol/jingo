@@ -7,6 +7,7 @@ import imp
 import logging
 import re
 
+import django
 from django.conf import settings
 from django.template.base import Origin, TemplateDoesNotExist
 from django.template.context import get_standard_processors
@@ -28,6 +29,7 @@ EXCLUDE_APPS = (
 log = logging.getLogger('jingo')
 
 _helpers_loaded = False
+_apps_loaded = False
 
 
 # In Django >= 1.7 we can get the installed apps from the app registry
@@ -131,32 +133,36 @@ class Register(object):
     def __init__(self, env):
         self.env = env
 
-    def filter(self, f=None, override=True):
+    def filter(self, f=None, name=None, override=True):
         """Adds the decorated function to Jinja's filter library."""
         def decorator(f):
             @functools.wraps(f)
             def wrapper(*args, **kw):
                 return f(*args, **kw)
-            return self.filter(wrapper, override)
+            return self.filter(wrapper, name, override)
 
         if not f:
             return decorator
-        if override or f.__name__ not in self.env.filters:
-            self.env.filters[f.__name__] = f
+
+        name = name or f.__name__
+        if override or name not in self.env.filters:
+            self.env.filters[name] = f
         return f
 
-    def function(self, f=None, override=True):
+    def function(self, f=None, name=None, override=True):
         """Adds the decorated function to Jinja's global namespace."""
         def decorator(f):
             @functools.wraps(f)
             def wrapper(*args, **kw):
                 return f(*args, **kw)
-            return self.function(wrapper, override)
+            return self.function(wrapper, name, override)
 
         if not f:
             return decorator
-        if override or f.__name__ not in self.env.globals:
-            self.env.globals[f.__name__] = f
+
+        name = name or f.__name__
+        if override or name not in self.env.globals:
+            self.env.globals[name] = f
         return f
 
     def inclusion_tag(self, template):

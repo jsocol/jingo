@@ -187,6 +187,32 @@ def test_filter_override():
     eq_(s, 'str')
 
 
+def test_filter_name():
+    @register.filter
+    def original(s):
+        return 'original'
+
+    @register.filter(name='original')
+    def duplicate(s):
+        return 'duplicate'
+
+    s = render('{{ ""|original }}')
+    eq_('duplicate', s)
+
+
+def test_function_name():
+    @register.function
+    def original():
+        return 'original'
+
+    @register.function(name='original')
+    def duplicate():
+        return 'duplicate'
+
+    s = render('{{ original() }}')
+    eq_('duplicate', s)
+
+
 def _check_query(path, result=None, **query):
     paramed = helpers.urlparams(path, **query)
     if result is None:
